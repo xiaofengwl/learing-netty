@@ -9,6 +9,7 @@
         <module name="learing-socket" />
         <module name="learing-basic" />
         <module name="learing-netty-core" />
+        <module name="learing-structure" />
       </profile>
     </annotationProcessing>
   </component>
