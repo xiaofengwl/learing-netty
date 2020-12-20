@@ -41,6 +41,7 @@ public class SimpleServerSocketCenter {
 
         //n，闭资源
         is.close();
+        os.close();
         server.close();
     }
 

@@ -8,12 +8,12 @@ import java.io.OutputStream;
 import java.net.Socket;
 
 /**
- * TODO 客户端
+ * TODO 2号客户端
  * @Author lvjun@csdn.net
- * @Date 2020/12/20 8:34 下午
+ * @Date 2020/12/20 9:38 下午
  * @Modified By:
  */
-public class SimpleClientSocket {
+public class SimpleClientSocket2 {
     /**
      * socket 客户端
      * @param args
@@ -26,11 +26,12 @@ public class SimpleClientSocket {
         //2，输出流
         OutputStream os = client.getOutputStream();
         //3，写出数据
-        os.write("客户端A请求接入....".getBytes());
+        os.write("客户端B请求接入....".getBytes());
 
         //4，获取服务端反馈的信息
         InputStream is=client.getInputStream();
         ToolUtils.printInputStreamInfo(is);
+
 
         //n，关闭资源
         is.close();
@@ -38,6 +39,4 @@ public class SimpleClientSocket {
         client.close();
 
     }
-
-
 }
