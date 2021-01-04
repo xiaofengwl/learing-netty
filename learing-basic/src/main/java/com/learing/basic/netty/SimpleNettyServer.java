@@ -1,9 +1,7 @@
 package com.learing.basic.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -31,29 +29,60 @@ public class SimpleNettyServer {
      */
     public void bind(int port)throws Exception{
         //todo 主线程组
-        EventLoopGroup bossGroup=new NioEventLoopGroup();
+        EventLoopGroup bossGroup=new NioEventLoopGroup(1);  //线程数1
         //todo 从线程组
-        EventLoopGroup workGroup=new NioEventLoopGroup();
+        EventLoopGroup workGroup=new NioEventLoopGroup(16); //线程数16
 
         try{
             //netty服务器启类
             ServerBootstrap serverBootstrap=new ServerBootstrap();
 
             serverBootstrap.group(bossGroup,workGroup)              //todo 绑定2个线程组
-                           //todo 用于构建socketChannel工厂
-                           .channel(NioServerSocketChannel.class)   //todo 指定NIO的模式
-                           .childHandler(new ChannelInitializer<SocketChannel>() {//todo 子处理器，用于处理workerGroup
-                               @Override
-                               protected void initChannel(SocketChannel socketChannel) throws Exception {
-                                    //todo 注册处理器
-                                    socketChannel.pipeline().addLast(new SimpleNettyServerHandler());
-                               }
-                           });
+                            //todo 设置服务端通道实现类型
+                            .channel(NioServerSocketChannel.class)
+                            //todo option()设置的是服务端用于接收进来的连接，也就是boosGroup线程。
+                            // SO_BACKLOG Socket参数，服务端接受连接的队列长度，如果队列已满，客户端连接将被拒绝。默认值，Windows为200，其他为128。
+                            .option(ChannelOption.SO_BACKLOG, 128)
+                            //todo childOption()是提供给父管道接收到的连接，也就是workerGroup线程。
+                            //SO_RCVBUF Socket参数，TCP数据接收缓冲区大小。
+                            //TCP_NODELAY TCP参数，立即发送数据，默认值为Ture。
+                            //SO_KEEPALIVE Socket参数，连接保活，默认值为False。启用该功能时，TCP会主动探测空闲连接的有效性。
+                            .childOption(ChannelOption.SO_KEEPALIVE, true)
+                            //todo 使用匿名内部类的形式初始化通道对象
+                            .childHandler(new ChannelInitializer<SocketChannel>() {//todo 子处理器，用于处理workerGroup
+                            @Override
+                            protected void initChannel(SocketChannel socketChannel) throws Exception {
+                                //todo 给pipeline管道设置处理器
+                                /**
+                                 * 处理器Handler主要分为两种：
+                                 * ChannelInboundHandlerAdapter(入站处理器)、ChannelOutboundHandler(出站处理器)
+                                 */
+                                socketChannel.pipeline().addLast(new SimpleNettyServerHandler());
+                            }
+             });
             //启动服务，绑定端口
+            /**
+             * todo ChannelFuture提供操作完成时一种异步通知的方式。一般在Socket编程中，等待响应结果都是同步阻塞的.
+             *      而Netty则不会造成阻塞，因为ChannelFuture是采取类似观察者模式的形式进行获取结果
+             */
             ChannelFuture channelFuture=serverBootstrap.bind(port).sync();
+            //添加监听器
+            channelFuture.addListener(new ChannelFutureListener() {
+                //使用匿名内部类，ChannelFutureListener接口
+                //重写operationComplete方法
+                @Override
+                public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                    //判断是否操作成功
+                    if (channelFuture.isSuccess()) {
+                        System.out.println("连接成功");
+                    } else {
+                        System.out.println("连接失败");
+                    }
+                }
+            });
             System.out.println("server start");
 
-            //监听关闭的channel,等到服务器的socket关闭，设置同步方式
+            //对关闭通道进行监听
             channelFuture.channel().closeFuture().sync();
             System.out.println("server close");
         }catch (Exception e){
