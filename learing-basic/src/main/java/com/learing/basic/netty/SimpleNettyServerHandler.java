@@ -5,15 +5,24 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 /**
+ * TODO 自定义的Handler需要继承Netty规定好的HandlerAdapter,才能被Netty框架所关联，有点类似SpringMVC的适配器模式
  * @Author lvjun@csdn.net
  * @Date 2021/1/3 8:10 下午
  * @Modified By:
+ * todo 处理器Handler主要分为两种：
+ *     ChannelInboundHandlerAdapter(入站处理器):
+ *          入站指的是数据从底层java NIO Channel到Netty的Channel。
+ *     ChannelOutboundHandler(出站处理器):
+ *          出站指的是通过Netty的Channel来操作底层的java NIO Channel。
+ *
+ * todo  * Netty设计了这个ChannelHandlerContext上下文对象，就可以拿到channel、pipeline等对象，就可以进行读写等操作。
  */
 public class SimpleNettyServerHandler extends ChannelInboundHandlerAdapter {
 
     /**
      * todo 本方法用于读取客户端发送的信息
-     * @param ctx  通道处理器上下文对象
+     * @param ctx  通道处理器上下文对象:
+     *             Netty设计了这个ChannelHandlerContext上下文对象，就可以拿到channel、pipeline等对象，就可以进行读写等操作。
      * @param msg  消息内容
      * @throws Exception
      */
@@ -41,6 +50,10 @@ public class SimpleNettyServerHandler extends ChannelInboundHandlerAdapter {
         ctx.write(encoded);
         ctx.flush();
 
+        //通过channel获取ChannelPipeline，并做相关的处理：
+        //ChannelPipeline pipeline = ctx.channel().pipeline();
+        //往pipeline中添加ChannelHandler处理器，装配流水线
+        //pipeline.addLast(new MyServerHandler());
     }
 
     /**
