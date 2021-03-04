@@ -29,12 +29,12 @@ public class SimpleNettyServer {
      */
     public void bind(int port)throws Exception{
         //todo 主线程组
-        EventLoopGroup bossGroup=new NioEventLoopGroup(1);  //线程数1
+        EventLoopGroup bossGroup=new NioEventLoopGroup(1);  //线程数1          接收请求交给worker
         //todo 从线程组
-        EventLoopGroup workGroup=new NioEventLoopGroup(16); //线程数16
+        EventLoopGroup workGroup=new NioEventLoopGroup(16); //线程数16         处理事件
 
         try{
-            //netty服务器启类
+            //netty服务器的辅助启动类，netty服务开始的地方
             ServerBootstrap serverBootstrap=new ServerBootstrap();
 
             serverBootstrap.group(bossGroup,workGroup)              //todo 绑定2个线程组
@@ -50,16 +50,16 @@ public class SimpleNettyServer {
                             .childOption(ChannelOption.SO_KEEPALIVE, true)
                             //todo 使用匿名内部类的形式初始化通道对象
                             .childHandler(new ChannelInitializer<SocketChannel>() {//todo 子处理器，用于处理workerGroup
-                            @Override
-                            protected void initChannel(SocketChannel socketChannel) throws Exception {
-                                //todo 给pipeline管道设置处理器
-                                /**
-                                 * 处理器Handler主要分为两种：
-                                 * ChannelInboundHandlerAdapter(入站处理器)、ChannelOutboundHandler(出站处理器)
-                                 */
-                                socketChannel.pipeline().addLast(new SimpleNettyServerHandler());
-                            }
-             });
+                                                @Override
+                                                protected void initChannel(SocketChannel socketChannel) throws Exception {
+                                                    //todo 给pipeline管道设置处理器
+                                                    /**
+                                                     * 处理器Handler主要分为两种：
+                                                     * ChannelInboundHandlerAdapter(入站处理器)、ChannelOutboundHandler(出站处理器)
+                                                     */
+                                                    socketChannel.pipeline().addLast(new SimpleNettyServerHandler());
+                                                }
+                            });
             //启动服务，绑定端口
             /**
              * todo ChannelFuture提供操作完成时一种异步通知的方式。一般在Socket编程中，等待响应结果都是同步阻塞的.
