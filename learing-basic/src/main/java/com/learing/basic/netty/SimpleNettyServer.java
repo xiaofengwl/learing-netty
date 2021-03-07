@@ -66,7 +66,7 @@ public class SimpleNettyServer {
              *      而Netty则不会造成阻塞，因为ChannelFuture是采取类似观察者模式的形式进行获取结果
              */
             ChannelFuture channelFuture=serverBootstrap.bind(port).sync();
-            //添加监听器
+            //添加监听器，自动返回结果通知线程
             channelFuture.addListener(new ChannelFutureListener() {
                 //使用匿名内部类，ChannelFutureListener接口
                 //重写operationComplete方法
@@ -75,15 +75,23 @@ public class SimpleNettyServer {
                     //判断是否操作成功
                     if (channelFuture.isSuccess()) {
                         System.out.println("连接成功");
-                    } else {
-                        System.out.println("连接失败");
+                    } else if(channelFuture.cause()!=null) {
+                        System.out.println("执行失败");
+                    }else if(channelFuture.isCancelled()){
+                        System.out.println("撤销执行");
                     }
+
+                    //释放资源，退出
+                    System.out.println(channelFuture.channel().toString()+" 链路关闭");
+                    bossGroup.shutdownGracefully();
+                    workGroup.shutdownGracefully();
+
                 }
             });
             System.out.println("server start");
 
             //对关闭通道进行监听
-            channelFuture.channel().closeFuture().sync();
+            channelFuture.channel().closeFuture().sync();   //主线程一直
             System.out.println("server close");
         }catch (Exception e){
             e.printStackTrace();
