@@ -56,7 +56,10 @@ public class SimpleNettyClient {
                 @Override
                 public void initChannel(SocketChannel ch) throws Exception {
                     //添加客户端通道的处理器
-                    ch.pipeline().addFirst(new SimpleNettyClientHandler());
+                    ChannelPipeline pipeline= ch.pipeline();
+                    pipeline.addLast(new CustomDecoder());              //加入解码器
+                    pipeline.addLast(new CustomEncoder());              //加入编码器
+                    pipeline.addLast(new SimpleNettyClientHandler());   //加入处理器
                 }
             });
 

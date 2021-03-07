@@ -1,8 +1,10 @@
 package com.learing.basic.netty;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
+
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 
 /**
  * TODO 自定义的Handler需要继承Netty规定好的HandlerAdapter,才能被Netty框架所关联，有点类似SpringMVC的适配器模式
@@ -17,7 +19,31 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
  *
  * todo  * Netty设计了这个ChannelHandlerContext上下文对象，就可以拿到channel、pipeline等对象，就可以进行读写等操作。
  */
-public class SimpleNettyServerHandler extends ChannelInboundHandlerAdapter {
+public class SimpleNettyServerHandler extends SimpleChannelInboundHandler<CustomProtocol> {
+
+    /**
+     * (1)，ChannelInboundHandlerAdapter处理器常用的事件有：
+     *  注册事件 fireChannelRegistered。
+     *  连接建立事件 fireChannelActive。
+     *  读事件和读完成事件 fireChannelRead、fireChannelReadComplete。
+     *  异常通知事件 fireExceptionCaught。
+     *  用户自定义事件 fireUserEventTriggered。
+     *  Channel 可写状态变化事件 fireChannelWritabilityChanged。
+     *  连接关闭事件 fireChannelInactive。
+     *
+     *
+     * (2),ChannelOutboundHandler处理器常用的事件有：
+     *  端口绑定 bind。
+     *  连接服务端 connect。
+     *  写事件 write。
+     *  刷新时间 flush。
+     *  读事件 read。
+     *  主动断开连接 disconnect。
+     *  关闭 channel 事件 close。
+     *
+     */
+
+    private int count;
 
     /**
      * todo 本方法用于读取客户端发送的信息
@@ -27,33 +53,22 @@ public class SimpleNettyServerHandler extends ChannelInboundHandlerAdapter {
      * @throws Exception
      */
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead0(ChannelHandlerContext ctx, CustomProtocol msg) throws Exception {
 
-        //todo 处理收到的消息
-        System.out.println("收到来自客服端的一条消息");
-        ByteBuf result = (ByteBuf) msg;
-        byte[] bytesMsg = new byte[result.readableBytes()];
-        // msg中存储的是ByteBuf类型的数据，把数据读取到byte[]中
-        result.readBytes(bytesMsg);
-        String resultStr = new String(bytesMsg);
-        // 接收并打印客户端的信息
-        System.out.println("客服端内容:" + resultStr);
-        // 释放资源，这行很关键
-        result.release();
+        int length = msg.getLength();
+        byte[] content = msg.getContent();
 
-        //todo 给客户端反馈信息
-        //向客户端发送消息
-        String response = "我是server，我已经收到你的消息： " + resultStr;
-        // 在当前场景下，发送的数据必须转换成ByteBuf数组
-        ByteBuf encoded = ctx.alloc().buffer(4 * response.length());
-        encoded.writeBytes(response.getBytes());
-        ctx.write(encoded);
-        ctx.flush();
-
-        //通过channel获取ChannelPipeline，并做相关的处理：
-        //ChannelPipeline pipeline = ctx.channel().pipeline();
-        //往pipeline中添加ChannelHandler处理器，装配流水线
-        //pipeline.addLast(new MyServerHandler());
+        System.out.println("服务端收到的内容： ");
+        System.out.println("内容长度：  " + length);
+        System.out.println("内容： " + new String(content, StandardCharsets.UTF_8));
+        System.out.println("服务端收到消息的数量： " + (++count));
+        //向客户端返回数据
+        String responseMsg = LocalDateTime.now().toString();
+        int responseLength = responseMsg.getBytes(StandardCharsets.UTF_8).length;
+        byte[] responseContent = responseMsg.getBytes(StandardCharsets.UTF_8);
+        //封装协议
+        CustomProtocol protocol = new CustomProtocol(responseLength, responseContent);
+        ctx.channel().writeAndFlush(protocol);
     }
 
     /**
